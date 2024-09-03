@@ -10,7 +10,10 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "prepare": "husky install"
+    "lint:fix": "eslint --ext .ts,.tsx .",
+    "prepare": "husky install",
+    "prettier": "prettier --check *.{ts,tsx} ./src/**/*.{ts,tsx}",
+    "prettier:fix": "prettier --write *.{ts,tsx} ./src/**/*.{ts,tsx}"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.4.1",
@@ -24,6 +27,7 @@
     "@electron-forge/plugin-fuses": "^7.4.0",
     "@electron-forge/plugin-webpack": "^7.4.0",
     "@electron/fuses": "^1.8.0",
+    "@types/event-kit": "^2.4.4",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
@@ -32,14 +36,24 @@
     "css-loader": "^6.0.0",
     "electron": "32.0.1",
     "eslint": "^8.0.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
     "eslint-plugin-import": "^2.25.0",
+    "eslint-plugin-react": "^7.35.1",
     "fork-ts-checker-webpack-plugin": "^7.2.13",
     "husky": "^9.1.5",
     "node-loader": "^2.0.0",
+    "prettier": "^3.3.3",
     "style-loader": "^3.0.0",
     "ts-loader": "^9.2.2",
     "ts-node": "^10.0.0",
     "typescript": "~4.5.4"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-commit": "yarn prettier:fix && yarn lint"
+    }
   },
   "keywords": [],
   "author": {
@@ -48,13 +62,11 @@
   },
   "license": "MIT",
   "dependencies": {
+    "conf": "^13.0.1",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-window-state": "^5.0.3",
+    "event-kit": "^2.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
-  },
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
   }
 }
