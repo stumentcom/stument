@@ -69,7 +69,6 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "prettier --write *.{ts,tsx} ./src/**/*.{ts,tsx} && git add -A .",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   }

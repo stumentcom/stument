@@ -1,0 +1,2 @@
+yarn prettier --write *.ts ./src/**/*.{ts,tsx}
+git add -A .
