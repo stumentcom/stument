@@ -1,6 +1,20 @@
 import React from "react"
 
-export default class App extends React.Component<any, any> {
+interface IAppProps {
+  startTime: number;
+}
+
+export default class App extends React.Component<IAppProps, any> {
+  constructor(props: IAppProps) {
+    super(props)
+  }
+
+  componentDidMount() {
+    const now = performance.now()
+    // @ts-ignore
+    window.stument.rendererReady(now - this.props.startTime)
+  }
+
   render() {
     return <div>App</div>
   }

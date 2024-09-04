@@ -11,13 +11,15 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "jsx": "react",
 
     // 启用装饰器
     "experimentalDecorators": true,
     "paths": {
-      "*": ["node_modules/*"]
-    },
-    "jsx": "react"
+      "~lib/*": ["./src/lib/*"],
+      "~main/*": ["./src/main/*"],
+      "~renderer/*": ["./src/renderer/*"],
+    }
   },
   "include": ["src/**/*", "./*.ts"]
 }

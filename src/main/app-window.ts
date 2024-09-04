@@ -6,6 +6,10 @@ import * as path from "path"
 import ipcMain = Electron.ipcMain
 import nativeTheme = Electron.nativeTheme
 import autoUpdater = Electron.autoUpdater
+import { now } from './now';
+import { registerWindowStateChangedEvents } from '../lib/window-state';
+import { getUpdaterGUID } from '~lib/get-updater-guid';
+import { ILaunchStats } from '~lib/stats';
 
 export class AppWindow {
   private window: Electron.BrowserWindow
@@ -38,10 +42,10 @@ export class AppWindow {
       webPreferences: {
         // Disable auxclick event
         // See https://developers.google.com/web/updates/2016/10/auxclick
-        disableBlinkFeatures: "Auxclick",
-        nodeIntegration: true,
-        spellcheck: true,
-        contextIsolation: false,
+        // disableBlinkFeatures: "Auxclick",
+        // nodeIntegration: true,
+        // spellcheck: true,
+        contextIsolation: true,
         preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
       },
       acceptFirstMouse: true
@@ -56,13 +60,6 @@ export class AppWindow {
     }
 
     this.window = new BrowserWindow(windowOptions)
-
-    if (__DEV__) {
-      // Open the DevTools.
-      this.window.webContents.openDevTools({
-        mode: "undocked"
-      })
-    }
 
     savedWindowState.manage(this.window)
 
@@ -143,9 +140,127 @@ export class AppWindow {
   }
 
   public load() {
+    let startLoad = 0
+    // We only listen for the first of the loading events to avoid a bug in
+    // Electron/Chromium where they can sometimes fire more than once. See
+    // See
+    // https://github.com/desktop/desktop/pull/513#issuecomment-253028277. This
+    // shouldn't really matter as in production builds loading _should_ only
+    // happen once.
+    this.window.webContents.once('did-start-loading', () => {
+      this._rendererReadyTime = null
+      this._loadTime = null
+
+      startLoad = now()
+    })
+
+    this.window.webContents.once('did-finish-load', () => {
+      if (__DEV__) {
+        this.window.webContents.openDevTools()
+      }
+
+      this._loadTime = now() - startLoad
+
+      this.maybeEmitDidLoad()
+    })
+
+    this.window.webContents.on('did-finish-load', () => {
+      this.window.webContents.setVisualZoomLevelLimits(1, 1)
+    })
+
+    this.window.webContents.on('did-fail-load', () => {
+      this.window.webContents.openDevTools()
+      this.window.show()
+    })
+
+    // TODO: This should be scoped by the window.
+    ipcMain.once('renderer-ready', (_, readyTime) => {
+      this._rendererReadyTime = readyTime
+      this.maybeEmitDidLoad()
+    })
+
+    this.window.on('focus', () =>
+      this.window.webContents.send('focus')
+    )
+    this.window.on('blur', () =>
+      this.window.webContents.send('blur')
+    )
+
+    registerWindowStateChangedEvents(this.window)
+
     this.window.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
 
-    this.show()
+    nativeTheme.addListener('updated', () => {
+      this.window.webContents.send('native-theme-updated')
+    })
+
+    this.setupAutoUpdater()
+  }
+
+  private maybeEmitDidLoad() {
+    if (!this.rendererLoaded) {
+      return
+    }
+
+    this.emitter.emit('did-load', null)
+  }
+
+  public onClosed(fn: () => void) {
+    this.window.on('closed', fn)
+  }
+
+  /**
+   * Register a function to call when the window is done loading. At that point
+   * the page has loaded and the renderer has signalled that it is ready.
+   */
+  public onDidLoad(fn: () => void): Disposable {
+    return this.emitter.on('did-load', fn)
+  }
+
+  /** Send a certificate error to the renderer. */
+  public sendCertificateError(
+    certificate: Electron.Certificate,
+    error: string,
+    url: string
+  ) {
+    this.window.webContents.send(
+      'certificate-error',
+      certificate,
+      error,
+      url
+    )
+  }
+
+  /** Is the page loaded and has the renderer signalled it's ready? */
+  private get rendererLoaded(): boolean {
+    return !!this.loadTime && !!this.rendererReadyTime
+  }
+
+  public sendLaunchTimingStats(stats: ILaunchStats) {
+    this.window.webContents.send('launch-timing-stats', stats)
+  }
+
+  /**
+   * Get the time (in milliseconds) spent loading the page.
+   *
+   * This will be `null` until `onDidLoad` is called.
+   */
+  public get loadTime(): number | null {
+    return this._loadTime
+  }
+
+  /**
+   * Get the time (in milliseconds) elapsed from the renderer being loaded to it
+   * signaling it was ready.
+   *
+   * This will be `null` until `onDidLoad` is called.
+   */
+  public get rendererReadyTime(): number | null {
+    return this._rendererReadyTime
+  }
+
+  public destroy() {
+    this.window.destroy()
   }
 
   public show() {
@@ -154,5 +269,98 @@ export class AppWindow {
       this.shouldMaximizeOnShow = false
       this.window.maximize()
     }
+  }
+
+  public setupAutoUpdater() {
+    autoUpdater.on('error', (error: Error) => {
+      this.isDownloadingUpdate = false
+      this.window.webContents.send('auto-updater-error', error)
+    })
+
+    autoUpdater.on('checking-for-update', () => {
+      this.isDownloadingUpdate = false
+      this.window.webContents.send(
+        'auto-updater-checking-for-update'
+      )
+    })
+
+    autoUpdater.on('update-available', () => {
+      this.isDownloadingUpdate = true
+      this.window.webContents.send(
+        'auto-updater-update-available'
+      )
+    })
+
+    autoUpdater.on('update-not-available', () => {
+      this.isDownloadingUpdate = false
+      this.window.webContents.send(
+        'auto-updater-update-not-available'
+      )
+    })
+
+    autoUpdater.on('update-downloaded', () => {
+      this.isDownloadingUpdate = false
+      this.window.webContents.send(
+        'auto-updater-update-downloaded'
+      )
+    })
+  }
+
+  public async checkForUpdates(url: string) {
+    try {
+      autoUpdater.setFeedURL({ url: await trySetUpdaterGuid(url) })
+      autoUpdater.checkForUpdates()
+    } catch (e) {
+      return e
+    }
+    return undefined
+  }
+
+  public quitAndInstallUpdate() {
+    autoUpdater.quitAndInstall()
+  }
+
+  public minimizeWindow() {
+    this.window.minimize()
+  }
+
+  public maximizeWindow() {
+    this.window.maximize()
+  }
+
+  public unmaximizeWindow() {
+    this.window.unmaximize()
+  }
+
+  public closeWindow() {
+    this.window.close()
+  }
+
+  public isMaximized() {
+    return this.window.isMaximized()
+  }
+
+  public getCurrentWindowZoomFactor() {
+    return this.window.webContents.zoomFactor
+  }
+
+  public setWindowZoomFactor(zoomFactor: number) {
+    this.window.webContents.zoomFactor = zoomFactor
+  }
+}
+
+
+const trySetUpdaterGuid = async (url: string) => {
+  try {
+    const id = await getUpdaterGUID()
+    if (!id) {
+      return url
+    }
+
+    const parsed = new URL(url)
+    parsed.searchParams.set('guid', id)
+    return parsed.toString()
+  } catch (e) {
+    return url
   }
 }
