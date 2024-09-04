@@ -1,1 +1,1 @@
-export { StatsDatabase, ILaunchStats } from './stats-database'
+export { StatsDatabase, ILaunchStats } from "./stats-database"

@@ -1,6 +1,6 @@
 import { AppWindow } from "./app-window"
 import { app } from "electron"
-import { now } from '~main/now';
+import { now } from "~lib/now"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -20,23 +20,19 @@ let onDidLoadFns: Array<OnDidLoadFn> | null = []
 
 app.setAppLogsPath()
 
-app.on('activate', () => {
+app.on("activate", () => {
   onDidLoad(window => {
     window.show()
   })
 })
 
+app.on("certificate-error", (event, webContents, url, error, certificate, callback) => {
+  callback(false)
 
-app.on(
-  'certificate-error',
-  (event, webContents, url, error, certificate, callback) => {
-    callback(false)
-
-    onDidLoad(window => {
-      window.sendCertificateError(certificate, error, url)
-    })
-  }
-)
+  onDidLoad(window => {
+    window.sendCertificateError(certificate, error, url)
+  })
+})
 
 function createWindow() {
   const window = new AppWindow()
@@ -53,7 +49,7 @@ function createWindow() {
     window.sendLaunchTimingStats({
       mainReadyTime: readyTime!,
       loadTime: window.loadTime!,
-      rendererReadyTime: window.rendererReadyTime!,
+      rendererReadyTime: window.rendererReadyTime!
     })
 
     const fns = onDidLoadFns!

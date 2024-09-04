@@ -6,10 +6,10 @@ import * as path from "path"
 import ipcMain = Electron.ipcMain
 import nativeTheme = Electron.nativeTheme
 import autoUpdater = Electron.autoUpdater
-import { now } from './now';
-import { registerWindowStateChangedEvents } from '../lib/window-state';
-import { getUpdaterGUID } from '~lib/get-updater-guid';
-import { ILaunchStats } from '~lib/stats';
+import { now } from "~lib/now"
+import { registerWindowStateChangedEvents } from "~lib/window-state"
+import { getUpdaterGUID } from "~lib/get-updater-guid"
+import { ILaunchStats } from "~lib/stats"
 
 export class AppWindow {
   private window: Electron.BrowserWindow
@@ -147,14 +147,14 @@ export class AppWindow {
     // https://github.com/desktop/desktop/pull/513#issuecomment-253028277. This
     // shouldn't really matter as in production builds loading _should_ only
     // happen once.
-    this.window.webContents.once('did-start-loading', () => {
+    this.window.webContents.once("did-start-loading", () => {
       this._rendererReadyTime = null
       this._loadTime = null
 
       startLoad = now()
     })
 
-    this.window.webContents.once('did-finish-load', () => {
+    this.window.webContents.once("did-finish-load", () => {
       if (__DEV__) {
         this.window.webContents.openDevTools()
       }
@@ -164,34 +164,30 @@ export class AppWindow {
       this.maybeEmitDidLoad()
     })
 
-    this.window.webContents.on('did-finish-load', () => {
+    this.window.webContents.on("did-finish-load", () => {
       this.window.webContents.setVisualZoomLevelLimits(1, 1)
     })
 
-    this.window.webContents.on('did-fail-load', () => {
+    this.window.webContents.on("did-fail-load", () => {
       this.window.webContents.openDevTools()
       this.window.show()
     })
 
     // TODO: This should be scoped by the window.
-    ipcMain.once('renderer-ready', (_, readyTime) => {
+    ipcMain.once("renderer-ready", (_, readyTime) => {
       this._rendererReadyTime = readyTime
       this.maybeEmitDidLoad()
     })
 
-    this.window.on('focus', () =>
-      this.window.webContents.send('focus')
-    )
-    this.window.on('blur', () =>
-      this.window.webContents.send('blur')
-    )
+    this.window.on("focus", () => this.window.webContents.send("focus"))
+    this.window.on("blur", () => this.window.webContents.send("blur"))
 
     registerWindowStateChangedEvents(this.window)
 
     this.window.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
 
-    nativeTheme.addListener('updated', () => {
-      this.window.webContents.send('native-theme-updated')
+    nativeTheme.addListener("updated", () => {
+      this.window.webContents.send("native-theme-updated")
     })
 
     this.setupAutoUpdater()
@@ -202,11 +198,11 @@ export class AppWindow {
       return
     }
 
-    this.emitter.emit('did-load', null)
+    this.emitter.emit("did-load", null)
   }
 
   public onClosed(fn: () => void) {
-    this.window.on('closed', fn)
+    this.window.on("closed", fn)
   }
 
   /**
@@ -214,21 +210,12 @@ export class AppWindow {
    * the page has loaded and the renderer has signalled that it is ready.
    */
   public onDidLoad(fn: () => void): Disposable {
-    return this.emitter.on('did-load', fn)
+    return this.emitter.on("did-load", fn)
   }
 
   /** Send a certificate error to the renderer. */
-  public sendCertificateError(
-    certificate: Electron.Certificate,
-    error: string,
-    url: string
-  ) {
-    this.window.webContents.send(
-      'certificate-error',
-      certificate,
-      error,
-      url
-    )
+  public sendCertificateError(certificate: Electron.Certificate, error: string, url: string) {
+    this.window.webContents.send("certificate-error", certificate, error, url)
   }
 
   /** Is the page loaded and has the renderer signalled it's ready? */
@@ -237,7 +224,7 @@ export class AppWindow {
   }
 
   public sendLaunchTimingStats(stats: ILaunchStats) {
-    this.window.webContents.send('launch-timing-stats', stats)
+    this.window.webContents.send("launch-timing-stats", stats)
   }
 
   /**
@@ -272,37 +259,29 @@ export class AppWindow {
   }
 
   public setupAutoUpdater() {
-    autoUpdater.on('error', (error: Error) => {
+    autoUpdater.on("error", (error: Error) => {
       this.isDownloadingUpdate = false
-      this.window.webContents.send('auto-updater-error', error)
+      this.window.webContents.send("auto-updater-error", error)
     })
 
-    autoUpdater.on('checking-for-update', () => {
+    autoUpdater.on("checking-for-update", () => {
       this.isDownloadingUpdate = false
-      this.window.webContents.send(
-        'auto-updater-checking-for-update'
-      )
+      this.window.webContents.send("auto-updater-checking-for-update")
     })
 
-    autoUpdater.on('update-available', () => {
+    autoUpdater.on("update-available", () => {
       this.isDownloadingUpdate = true
-      this.window.webContents.send(
-        'auto-updater-update-available'
-      )
+      this.window.webContents.send("auto-updater-update-available")
     })
 
-    autoUpdater.on('update-not-available', () => {
+    autoUpdater.on("update-not-available", () => {
       this.isDownloadingUpdate = false
-      this.window.webContents.send(
-        'auto-updater-update-not-available'
-      )
+      this.window.webContents.send("auto-updater-update-not-available")
     })
 
-    autoUpdater.on('update-downloaded', () => {
+    autoUpdater.on("update-downloaded", () => {
       this.isDownloadingUpdate = false
-      this.window.webContents.send(
-        'auto-updater-update-downloaded'
-      )
+      this.window.webContents.send("auto-updater-update-downloaded")
     })
   }
 
@@ -349,7 +328,6 @@ export class AppWindow {
   }
 }
 
-
 const trySetUpdaterGuid = async (url: string) => {
   try {
     const id = await getUpdaterGUID()
@@ -358,7 +336,7 @@ const trySetUpdaterGuid = async (url: string) => {
     }
 
     const parsed = new URL(url)
-    parsed.searchParams.set('guid', id)
+    parsed.searchParams.set("guid", id)
     return parsed.toString()
   } catch (e) {
     return url

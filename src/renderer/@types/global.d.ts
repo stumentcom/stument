@@ -1,5 +1,3 @@
-
-
 /* eslint-disable @typescript-eslint/naming-convention */
 /** Is the app running in dev mode? */
 declare const __DEV__: boolean
@@ -29,7 +27,6 @@ declare const __APP_VERSION__: string
 
 /** The channel for which the release was created. */
 declare const __RELEASE_CHANNEL__: "production" | "beta" | "test" | "development"
-
 
 declare global {
   interface Window {

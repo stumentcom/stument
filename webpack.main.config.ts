@@ -18,7 +18,7 @@ export const mainConfig: Configuration = {
     alias: {
       "~lib": path.resolve(__dirname, "src/lib"),
       "~main": path.resolve(__dirname, "src/main"),
-      "~renderer": path.resolve(__dirname, "src/renderer"),
+      "~renderer": path.resolve(__dirname, "src/renderer")
     },
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".json"]
   }

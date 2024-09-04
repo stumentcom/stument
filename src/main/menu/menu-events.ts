@@ -1,2 +1,1 @@
-export type MenuEvent =
-  | ""
+export type MenuEvent = ""

@@ -1,4 +1,4 @@
-import Dexie from 'dexie'
+import Dexie from "dexie"
 
 // NB: This _must_ be incremented whenever the DB key scheme changes.
 const DatabaseVersion = 2
@@ -611,11 +611,11 @@ export class StatsDatabase extends Dexie {
     super(name)
 
     this.version(1).stores({
-      launches: '++',
+      launches: "++"
     })
 
     this.version(DatabaseVersion).stores({
-      dailyMeasures: '++id',
+      dailyMeasures: "++id"
     })
   }
 }

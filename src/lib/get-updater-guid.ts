@@ -1,19 +1,18 @@
-import { app } from 'electron'
-import { readFile, writeFile } from 'fs/promises'
-import { join } from 'path'
-import { uuid } from './uuid'
-import log from 'electron-log/main'
+import { app } from "electron"
+import { readFile, writeFile } from "fs/promises"
+import { join } from "path"
+import { uuid } from "./uuid"
+import log from "electron-log/main"
 
 let cachedGUID: string | undefined = undefined
 
-const getUpdateGUIDPath = () => join(app.getPath('userData'), '.update-id')
-const writeUpdateGUID = (id: string) =>
-  writeFile(getUpdateGUIDPath(), id).then(() => id)
+const getUpdateGUIDPath = () => join(app.getPath("userData"), ".update-id")
+const writeUpdateGUID = (id: string) => writeFile(getUpdateGUIDPath(), id).then(() => id)
 
 export const getUpdaterGUID = async () => {
   return (
     cachedGUID ??
-    readFile(getUpdateGUIDPath(), 'utf8')
+    readFile(getUpdateGUIDPath(), "utf8")
       .then(id => id.trim())
       .then(id => (id.length === 36 ? id : writeUpdateGUID(uuid())))
       .catch(() => writeUpdateGUID(uuid()))

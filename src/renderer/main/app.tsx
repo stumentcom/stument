@@ -1,7 +1,7 @@
 import React from "react"
 
 interface IAppProps {
-  startTime: number;
+  startTime: number
 }
 
 export default class App extends React.Component<IAppProps, any> {
