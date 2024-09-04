@@ -1,13 +1,10 @@
 import windowStateKeeper from "electron-window-state"
-import Electron, { app, BrowserWindow } from "electron"
+import Electron, { app, BrowserWindow, ipcMain, nativeTheme, autoUpdater } from "electron"
 import { Emitter, Disposable } from "event-kit"
 import * as path from "path"
 
-import ipcMain = Electron.ipcMain
-import nativeTheme = Electron.nativeTheme
-import autoUpdater = Electron.autoUpdater
 import { now } from "~lib/now"
-import { registerWindowStateChangedEvents } from "~lib/window-state"
+import { getWindowState, registerWindowStateChangedEvents } from "~lib/window-state"
 import { getUpdaterGUID } from "~lib/get-updater-guid"
 import { ILaunchStats } from "~lib/stats"
 
@@ -42,9 +39,9 @@ export class AppWindow {
       webPreferences: {
         // Disable auxclick event
         // See https://developers.google.com/web/updates/2016/10/auxclick
-        // disableBlinkFeatures: "Auxclick",
-        // nodeIntegration: true,
-        // spellcheck: true,
+        disableBlinkFeatures: "Auxclick",
+        nodeIntegration: true,
+        spellcheck: true,
         contextIsolation: true,
         preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
       },
@@ -205,6 +202,32 @@ export class AppWindow {
     this.window.on("closed", fn)
   }
 
+  public isMinimized() {
+    return this.window.isMinimized()
+  }
+
+  /** Is the window currently visible? */
+  public isVisible() {
+    return this.window.isVisible()
+  }
+
+  public restore() {
+    this.window.restore()
+  }
+
+  public isFocused() {
+    return this.window.isFocused()
+  }
+
+  public focus() {
+    this.window.focus()
+  }
+
+  /** Selects all the windows web contents */
+  public selectAllWindowContents() {
+    this.window.webContents.selectAll()
+  }
+
   /**
    * Register a function to call when the window is done loading. At that point
    * the page has loaded and the renderer has signalled that it is ready.
@@ -325,6 +348,10 @@ export class AppWindow {
 
   public setWindowZoomFactor(zoomFactor: number) {
     this.window.webContents.zoomFactor = zoomFactor
+  }
+
+  public getCurrentWindowState() {
+    return getWindowState(this.window)
   }
 }
 
