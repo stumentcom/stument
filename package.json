@@ -3,7 +3,24 @@
   "productName": "stument",
   "version": "1.0.0",
   "description": "Stument application",
+  "keywords": [],
   "main": ".webpack/main",
+  "author": {
+    "name": "merlinpanda",
+    "email": "salve.cheung@outlook.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "conf": "^13.0.1",
+    "dexie": "^4.0.8",
+    "electron-log": "^5.1.7",
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-window-state": "^5.0.3",
+    "event-kit": "^2.5.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "uuid": "^10.0.0"
+  },
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -55,22 +72,5 @@
       "pre-commit": "prettier --write *.{ts,tsx} ./src/**/*.{ts,tsx} && git add -A .",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
-  },
-  "keywords": [],
-  "author": {
-    "name": "merlinpanda",
-    "email": "salve.cheung@outlook.com"
-  },
-  "license": "MIT",
-  "dependencies": {
-    "conf": "^13.0.1",
-    "dexie": "^4.0.8",
-    "electron-log": "^5.1.7",
-    "electron-squirrel-startup": "^1.0.1",
-    "electron-window-state": "^5.0.3",
-    "event-kit": "^2.5.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "uuid": "^10.0.0"
   }
 }
